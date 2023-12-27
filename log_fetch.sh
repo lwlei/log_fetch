@@ -3,8 +3,8 @@
 
 # 参数设置
 ip="127.0.0.1"
-start_time="2023-11-16 14:30"
-end_time="2023-11-18 22:54"
+start_time=$(date -v -1H +"%Y-%m-%d %H:%M")
+end_time=$(date +"%Y-%m-%d %H:%M")
 user="root"
 password=""
 port="8242"
@@ -13,11 +13,23 @@ port="8242"
 be_log_patten="^[I|W|E][0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}"
 fe_log_patten="^[0-9]{4}-[0-9]{2}-[0-9]{2}(T| )[0-9]{2}:[0-9]{2}:[0-9]{2}"
 
-while getopts i:s:e:u:p:P: OPTION
-do
-    case $OPTION in
-        i) ip=$OPTARG
-        ;;
+# 定义帮助信息函数
+show_help() {
+    echo "Usage: $0 : Fetch logs of the current node. [options]"
+    echo "Example:"
+    echo "  If FE: sh log_fetch.sh -s '2023-12-07 14:30' -e '2023-12-08 11:54' -u root -p 123456 -P 8030"
+    echo "  If BE: sh log_fetch.sh -s '2023-12-07 14:30' -e '2023-12-08 11:54' -P 8040"
+    echo "\nOptions:"
+    echo "  -s   start_time       Set the start time for the logs, eg: '2023-12-07 14:30'. Default: current_datetime - 1 hour"
+    echo "  -e   end_time         Set the end time for the logs, eg: '2023-12-08 11:54'. Default: current_datetime"
+    echo "  -u   user             Set the user for StarRocks, eg: root"
+    echo "  -p   password         Set the password for StarRocks, eg: 'abc@123'. It is used to identify if the current node is FE."
+    echo "  -P   http_port        Set the http port for FE or BE, default: 8030"
+    echo "  -h                    Display this help message"
+}
+
+while getopts "s:e:u:p:P:h" opt; do
+    case $opt in
         s) start_time=$OPTARG
         ;;
         e) end_time=$OPTARG
@@ -28,8 +40,24 @@ do
         ;;
         P) port=$OPTARG
         ;;
+        h) show_help
+           exit 0
+        ;;
+        \?) show_help
+            echo "Invalid option: -$OPTARG" >&2
+            exit 1
+        ;;
     esac
 done
+
+# test
+test() {
+    echo $start_time $end_time
+    echo $user $password $port
+    exit 1
+}
+test
+
 
 # 将时间转换为Unix时间戳
 start_timestamp=$(date -d "$start_time" +%s)

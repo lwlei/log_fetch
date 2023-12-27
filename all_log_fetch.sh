@@ -2,20 +2,93 @@
 # -*- coding: utf-8 -*-
 
 # 定义日志的起始时间
-start_time="2023-12-07 14:30"
-end_time="2023-12-08 11:54"
+start_time=$(date -v -1H +"%Y-%m-%d %H:%M")
+end_time=$(date +"%Y-%m-%d %H:%M")
 
 # 定义FE相关信息
 fe_ip_list=("cs01" "cs02" "cs03")
 fe_ssh_port=22
 user="root"
-password="sr@2023"
+password=""
 fe_port=8232
 
 # 定义BE相关信息
 be_ip_list=("cs01" "cs03")
 be_ssh_port=22
 be_port=8242
+
+# 定义帮助信息函数
+show_help() {
+    echo "Usage: $0 : Fetch logs of the given node. [options]"
+    echo "Example: "
+    echo "  Hybrid deployment:     sh all_log_fetch.sh -s '2023-12-07 14:30' -e '2023-12-08 11:54' -i cs01,cs02,cs03 -u root -p 123456"
+    echo "  Standalone deployment: sh all_log_fetch.sh -s '2023-12-07 14:30' -e '2023-12-08 11:54' -f cs01,cs02 -b cs03,cs04 -u root -p 123456"
+    echo "\nOptions:"
+    echo "  -s   start_time       Set the start time for the logs, eg: '2023-12-07 14:30'. Default: current_datetime - 1 hour"
+    echo "  -e   end_time         Set the end time for the logs, eg: '2023-12-08 11:54'. Default: current_datetime"
+    echo "  -i   ip_list          Set the IP list of FE && BE nodes, eg: cs01,cs02,cs03. If set -i, donnot need to sed -f or -b."
+    echo "  -P   ssh_port         Set the SSH port for FE && BE nodes, default: 22. If set -a, donnot need to sed -o or -r."
+    echo "  -f   fe_ip_list       Set the IP list of FE nodes, eg: cs01,cs02,cs03"
+    echo "  -o   fe_ssh_port      Set the SSH port for FE nodes, default: 22"
+    echo "  -u   user             Set the user for StarRocks, eg: root"
+    echo "  -p   password         Set the password for StarRocks, eg: 'abc@123'"
+    echo "  -t   fe_port          Set the http port for FE, default: 8030"
+    echo "  -b   be_ip_list       Set the IP list of BE nodes, eg: cs01,cs02,cs03"
+    echo "  -r   be_ssh_port      Set the SSH port for BE nodes, default: 22"
+    echo "  -w   be_port          Set the http port for BE, default: 8040"
+    echo "  -h                    Display this help message"
+}
+
+# 使用 getopts 解析命令行选项
+while getopts ":s:e:i:P:f:o:u:p:t:b:r:w:h" opt; do
+    case $opt in
+        s) start_time=$OPTARG
+        ;;
+        e) end_time=$OPTARG
+        ;;
+        i) IFS=',' read -r -a fe_ip_list <<< "$OPTARG"
+           be_ip_list=("${fe_ip_list[@]}")
+        ;;
+        P) fe_ssh_port=$OPTARG
+           be_ssh_port=$fe_ssh_port
+        ;;
+        f) IFS=',' read -r -a fe_ip_list <<< "$OPTARG"
+        ;;
+        o) fe_ssh_port=$OPTARG
+        ;;
+        u) user=$OPTARG
+        ;;
+        p) password=$OPTARG
+        ;;
+        t) fe_port=$OPTARG
+        ;;
+        b) IFS=',' read -r -a be_ip_list <<< "$OPTARG"
+        ;;
+        r) be_ssh_port=$OPTARG
+        ;;
+        w) be_port=$OPTARG
+        ;;
+        h) show_help
+            exit 0
+        ;;
+        \?) show_help
+            echo "Invalid option: -$OPTARG" >&2
+            exit 1
+        ;;
+    esac
+done
+
+# test
+test() {
+    echo $start_time $end_time
+    echo "${fe_ip_list[@]}"
+    echo $fe_ssh_port $user $password $fe_port
+    echo "${be_ip_list[@]}"
+    echo $be_ssh_port $be_port
+    exit 1
+}
+test
+
 
 # 定义日志的临时存储目录
 des_log_dir="/tmp/all_log-$(date +'%Y-%m-%d_%H-%M')"
